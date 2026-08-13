@@ -84,6 +84,13 @@ def auth_login():
             flash("Por favor completa todos los campos.", "warning")
             return redirect(url_for("auth_login"))
 
+        recent_count = MagicToken.query.filter_by(email=email, used=False).filter(
+            MagicToken.created_at >= datetime.utcnow() - timedelta(minutes=10)
+        ).count()
+        if recent_count >= 3:
+            flash("Demasiadas solicitudes. Espera unos minutos antes de pedir otro enlace.", "warning")
+            return redirect(url_for("auth_login"))
+
         user = User.query.filter_by(email=email).first()
         is_new_user = user is None
         if not user:
