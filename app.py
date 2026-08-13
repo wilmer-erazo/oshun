@@ -145,6 +145,23 @@ def auth_verify(token):
     db.session.commit()
 
     login_user(user, remember=True)
+
+    from flask import session as flask_session
+    pending = flask_session.pop("pending_offer", None)
+    if pending:
+        _save_offer(
+            user,
+            pending.get("offer_type", "goods"),
+            pending.get("title", ""),
+            pending.get("description", ""),
+            pending.get("preferred_date"),
+            pending.get("shelter_id"),
+            pending.get("contact_email", ""),
+            pending.get("contact_phone", ""),
+        )
+        flash(f"¡Bienvenido/a, {user.name}! Tu oferta fue registrada.", "success")
+        return redirect(url_for("volunteer_dashboard"))
+
     flash(f"¡Bienvenido/a, {user.name}!", "success")
     return redirect(_role_home())
 
@@ -200,9 +217,10 @@ def volunteer_dashboard():
 
 
 @app.route("/volunteer/offer", methods=["GET", "POST"])
-@login_required
 def volunteer_offer():
+    from flask import session as flask_session
     shelters = Shelter.query.filter_by(is_active=True).all()
+    today = date.today().isoformat()
     if request.method == "POST":
         offer_type = request.form.get("offer_type")
         title = request.form.get("title", "").strip()
@@ -214,47 +232,79 @@ def volunteer_offer():
 
         if not offer_type or not title:
             flash("Por favor completa los campos obligatorios.", "warning")
-            return render_template("volunteer/offer_form.html", shelters=shelters)
+            return render_template("volunteer/offer_form.html", shelters=shelters, today=today)
 
-        preferred_date = None
-        if preferred_date_str:
-            try:
-                preferred_date = date.fromisoformat(preferred_date_str)
-            except ValueError:
-                pass
+        if not current_user.is_authenticated:
+            flask_session["pending_offer"] = {
+                "offer_type": offer_type,
+                "title": title,
+                "description": description,
+                "preferred_date": preferred_date_str,
+                "shelter_id": shelter_id,
+                "contact_email": contact_email,
+                "contact_phone": contact_phone,
+            }
+            flash("¡Ya casi! Ingresa o crea tu cuenta para completar el envío.", "info")
+            return redirect(url_for("auth_login"))
 
-        offer = Offer(
-            user_id=current_user.id,
-            offer_type=offer_type,
-            title=title,
-            description=description,
-            preferred_date=preferred_date,
-            shelter_id=int(shelter_id) if shelter_id else None,
-            contact_email=contact_email or None,
-            contact_phone=contact_phone or None,
-        )
-        db.session.add(offer)
-        db.session.commit()
-
-        base_url = app.config.get("BASE_URL", "http://localhost:5001")
-        type_labels = {"activity": "Actividad 🎨", "food": "Alimentos 🍱", "goods": "Artículos 📦"}
-        wa_msg = (
-            f"🌊 *Nueva ayuda registrada en Oshún*\n\n"
-            f"👤 *Voluntario:* {current_user.name}\n"
-            f"📋 *Tipo:* {type_labels.get(offer_type, offer_type)}\n"
-            f"📝 *Descripción:* {title}\n"
-        )
-        if contact_email:
-            wa_msg += f"📧 *Email:* {contact_email}\n"
-        if contact_phone:
-            wa_msg += f"📱 *Celular:* {contact_phone}\n"
-        wa_msg += f"\n🔗 Ver dashboard: {base_url}/admin/dashboard"
-        _send_whatsapp(wa_msg)
-
+        _save_offer(current_user, offer_type, title, description,
+                    preferred_date_str, shelter_id, contact_email, contact_phone)
         flash("¡Tu oferta fue enviada! El equipo la revisará pronto.", "success")
         return redirect(url_for("volunteer_dashboard"))
 
-    return render_template("volunteer/offer_form.html", shelters=shelters)
+    return render_template("volunteer/offer_form.html", shelters=shelters, today=today)
+
+
+def _save_offer(user, offer_type, title, description,
+                preferred_date_str, shelter_id, contact_email, contact_phone):
+    preferred_date = None
+    if preferred_date_str:
+        try:
+            preferred_date = date.fromisoformat(preferred_date_str)
+        except ValueError:
+            pass
+    offer = Offer(
+        user_id=user.id,
+        offer_type=offer_type,
+        title=title,
+        description=description,
+        preferred_date=preferred_date,
+        shelter_id=int(shelter_id) if shelter_id else None,
+        contact_email=contact_email or None,
+        contact_phone=contact_phone or None,
+    )
+    db.session.add(offer)
+    db.session.commit()
+    base_url = app.config.get("BASE_URL", "http://localhost:5001")
+    type_labels = {"activity": "Actividad 🎨", "food": "Alimentos 🍱", "goods": "Artículos 📦"}
+    wa_msg = (
+        f"🌊 *Nueva ayuda registrada en Oshún*\n\n"
+        f"👤 *Voluntario:* {user.name}\n"
+        f"📋 *Tipo:* {type_labels.get(offer_type, offer_type)}\n"
+        f"📝 *Descripción:* {title}\n"
+    )
+    if contact_email:
+        wa_msg += f"📧 *Email:* {contact_email}\n"
+    if contact_phone:
+        wa_msg += f"📱 *Celular:* {contact_phone}\n"
+    wa_msg += f"\n🔗 Ver dashboard: {base_url}/admin/dashboard"
+    _send_whatsapp(wa_msg)
+
+
+@app.route("/volunteer/offer/<int:offer_id>/cancel", methods=["POST"])
+@login_required
+def volunteer_cancel_offer(offer_id):
+    offer = Offer.query.get_or_404(offer_id)
+    if offer.user_id != current_user.id:
+        flash("No tienes permiso para cancelar esta oferta.", "danger")
+        return redirect(url_for("volunteer_dashboard"))
+    if offer.status != "pending":
+        flash("Solo puedes cancelar ofertas pendientes.", "warning")
+        return redirect(url_for("volunteer_dashboard"))
+    db.session.delete(offer)
+    db.session.commit()
+    flash("Oferta cancelada.", "info")
+    return redirect(url_for("volunteer_dashboard"))
 
 
 # ─── Coordinator ───────────────────────────────────────────────────────────────
@@ -533,6 +583,18 @@ def _notify_offer_accepted(offer):
         mail.send(msg)
     except Exception:
         pass
+
+
+# ─── Error handlers ────────────────────────────────────────────────────────────
+
+@app.errorhandler(404)
+def not_found(e):
+    return render_template("errors/404.html"), 404
+
+
+@app.errorhandler(500)
+def server_error(e):
+    return render_template("errors/500.html"), 500
 
 
 # ─── CLI seed ──────────────────────────────────────────────────────────────────

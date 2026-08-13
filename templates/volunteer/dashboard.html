@@ -68,6 +68,16 @@
                 </div>
               {% endif %}
             </div>
+            {% if offer.status == 'pending' %}
+            <div class="card-footer bg-transparent pt-0">
+              <form method="POST" action="{{ url_for('volunteer_cancel_offer', offer_id=offer.id) }}"
+                    onsubmit="return confirm('¿Cancelar esta oferta?')">
+                <button type="submit" class="btn btn-sm btn-ghost-danger w-100">
+                  <i class="ti ti-trash me-1"></i>Cancelar oferta
+                </button>
+              </form>
+            </div>
+            {% endif %}
           </div>
         </div>
         {% endfor %}

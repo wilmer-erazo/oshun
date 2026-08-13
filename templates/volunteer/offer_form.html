@@ -14,6 +14,16 @@
 </div>
 
 <div class="container pb-5">
+    {% if not current_user.is_authenticated %}
+    <div class="alert alert-info d-flex align-items-center gap-3 mb-4">
+      <i class="ti ti-info-circle fs-3 flex-shrink-0"></i>
+      <div>
+        Completa el formulario y al enviarlo te pediremos ingresar (sin contraseña, solo un enlace al correo).
+        Tu oferta quedará guardada automáticamente.
+        <a href="{{ url_for('auth_login') }}" class="alert-link ms-1">¿Ya tienes cuenta? Ingresa primero.</a>
+      </div>
+    </div>
+    {% endif %}
     <form method="POST" action="{{ url_for('volunteer_offer') }}">
       <input type="hidden" name="offer_type" id="offer_type_input" value=""/>
 
