@@ -7,6 +7,7 @@ from functools import wraps
 from flask import Flask, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import LoginManager, current_user, login_required, login_user, logout_user
 from flask_mail import Mail, Message
+from flask_migrate import Migrate
 
 from config import Config
 from models import MagicToken, Offer, Shelter, User, db
@@ -16,6 +17,7 @@ app.config.from_object(Config)
 
 db.init_app(app)
 mail = Mail(app)
+migrate = Migrate(app, db)
 
 login_manager = LoginManager(app)
 login_manager.login_view = "auth_login"
