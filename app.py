@@ -164,7 +164,7 @@ def _send_magic_link(name, email, link):
         return False
     try:
         msg = Message(
-            subject="Tu enlace de acceso — Albergues Cali",
+            subject="Tu enlace de acceso — Oshún",
             recipients=[email],
         )
         msg.body = (
@@ -172,7 +172,7 @@ def _send_magic_link(name, email, link):
             f"Haz clic en el siguiente enlace para iniciar sesión:\n\n"
             f"{link}\n\n"
             f"Este enlace expira en 1 hora y solo puede usarse una vez.\n\n"
-            f"— Equipo Albergues Cali"
+            f"— Equipo Oshún"
         )
         msg.html = render_template("auth/magic_link_email.html", name=name, link=link)
         mail.send(msg)
@@ -462,7 +462,7 @@ def _notify_offer_accepted(offer):
         user = offer.volunteer
         shelter = offer.shelter
         msg = Message(
-            subject="Tu oferta fue aceptada — Albergues Cali",
+            subject="Tu oferta fue aceptada — Oshún",
             recipients=[user.email],
         )
         msg.body = (
@@ -471,7 +471,7 @@ def _notify_offer_accepted(offer):
             f"Albergue: {shelter.name if shelter else 'Por confirmar'}\n"
             f"Fecha: {offer.scheduled_date.strftime('%d/%m/%Y') if offer.scheduled_date else 'Por confirmar'}\n"
             f"Dirección: {shelter.address if shelter else ''}\n\n"
-            f"¡Gracias por tu ayuda!\n— Equipo Albergues Cali"
+            f"¡Gracias por tu ayuda!\n— Equipo Oshún"
         )
         mail.send(msg)
     except Exception:
