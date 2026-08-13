@@ -90,6 +90,13 @@ def auth_login():
             user = User(name=name, email=email, role="volunteer")
             db.session.add(user)
             db.session.commit()
+            base_url = app.config.get("BASE_URL", "http://localhost:5001")
+            _send_whatsapp(
+                f"🌊 *Nuevo voluntario registrado en Oshún*\n\n"
+                f"👤 *Nombre:* {name}\n"
+                f"📧 *Email:* {email}\n\n"
+                f"🔗 Ver voluntarios: {base_url}/admin/volunteers"
+            )
 
         token = secrets.token_urlsafe(32)
         token_hash = hashlib.sha256(token.encode()).hexdigest()
