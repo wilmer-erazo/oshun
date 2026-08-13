@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Editar mi oferta — Oshún{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <h2 class="section-title" data-aos="fade-right">
+      <i class="ti ti-edit text-primary me-2"></i>Editar mi oferta
+    </h2>
+    <p class="section-sub" data-aos="fade-right" data-aos-delay="80">
+      Actualiza los datos de tu oferta. Solo puedes editar ofertas que aún están pendientes de revisión.
+    </p>
+  </div>
+</div>
+
+<div class="container pb-5">
+    <form method="POST" action="{{ url_for('volunteer_edit_offer', offer_id=offer.id) }}">
+      <input type="hidden" name="offer_type" id="offer_type_input" value="{{ offer.offer_type }}"/>
+
+      <!-- Step 1: Type selector -->
+      <div class="card mb-4" data-aos="fade-up">
+        <div class="card-header">
+          <h3 class="card-title mb-0">
+            <span class="badge bg-primary-lt text-primary me-2">1</span>
+            ¿Qué tipo de ayuda quieres ofrecer?
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <div class="offer-type-card{% if offer.offer_type == 'activity' %} selected{% endif %}" data-type="activity">
+                <span class="type-icon">🎨</span>
+                <div class="type-label">Actividad</div>
+                <div class="text-muted small mt-1">Talleres, juegos, acompañamiento emocional, entretenimiento</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="offer-type-card{% if offer.offer_type == 'food' %} selected{% endif %}" data-type="food">
+                <span class="type-icon">🍱</span>
+                <div class="type-label">Donación de alimentos</div>
+                <div class="text-muted small mt-1">Comida preparada, enlatados, snacks, agua</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="offer-type-card{% if offer.offer_type == 'goods' %} selected{% endif %}" data-type="goods">
+                <span class="type-icon">📦</span>
+                <div class="type-label">Artículos</div>
+                <div class="text-muted small mt-1">Ropa, kits de higiene, cobijas, útiles escolares</div>
+              </div>
+            </div>
+          </div>
+          <div id="type-error" class="text-danger small mt-2" style="display:none">
+            <i class="ti ti-alert-circle me-1"></i>Por favor selecciona un tipo de ayuda.
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Details -->
+      <div class="card mb-4" data-aos="fade-up" data-aos-delay="80">
+        <div class="card-header">
+          <h3 class="card-title mb-0">
+            <span class="badge bg-primary-lt text-primary me-2">2</span>
+            Cuéntanos más
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Título de tu oferta <span class="text-danger">*</span></label>
+              <input type="text" name="title" class="form-control form-control-lg"
+                     placeholder="Ej: Taller de manualidades para niños, Caja de mercado, 50 cobijas"
+                     value="{{ offer.title }}"
+                     required/>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Descripción</label>
+              <textarea name="description" class="form-control" rows="3"
+                        placeholder="Cuéntanos detalles: cuántas personas, qué materiales traes, cuánto tiempo dura la actividad...">{{ offer.description or '' }}</textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Fecha preferida</label>
+              <input type="date" name="preferred_date" class="form-control"
+                     min="{{ today }}"
+                     value="{{ offer.preferred_date.isoformat() if offer.preferred_date else '' }}"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Albergue preferido <span class="text-muted">(opcional)</span></label>
+              <select name="shelter_id" class="form-select">
+                <option value="">El equipo lo asignará</option>
+                {% for s in shelters %}
+                  <option value="{{ s.id }}"{% if offer.shelter_id == s.id %} selected{% endif %}>
+                    {{ s.name }} — {{ s.neighborhood or s.address }}
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Si no tienes preferencia, asignaremos el albergue con más necesidad.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Contact -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h3 class="card-title mb-0">
+            <span class="badge bg-primary-lt text-primary me-2">3</span>
+            ¿Cómo te contactamos?
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Correo electrónico <span class="text-muted">(opcional)</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="ti ti-mail"></i></span>
+                <input type="email" name="contact_email" class="form-control"
+                       placeholder="tu@correo.com"
+                       value="{{ offer.contact_email or '' }}"/>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Celular <span class="text-muted">(opcional)</span></label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="ti ti-phone"></i></span>
+                <input type="tel" name="contact_phone" class="form-control"
+                       placeholder="300 123 4567"
+                       value="{{ offer.contact_phone or '' }}"/>
+              </div>
+            </div>
+          </div>
+          <div class="form-text mt-2">
+            <i class="ti ti-info-circle me-1"></i>
+            Usaremos estos datos solo para coordinar tu ayuda con el albergue.
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="card">
+        <div class="card-body d-flex gap-3">
+          <button type="submit" class="btn btn-primary btn-lg px-5" id="submit-btn">
+            <i class="ti ti-device-floppy me-2"></i>Guardar cambios
+          </button>
+          <a href="{{ url_for('volunteer_dashboard') }}" class="btn btn-outline-secondary btn-lg">
+            Cancelar
+          </a>
+        </div>
+      </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const cards = document.querySelectorAll('.offer-type-card');
+  const typeInput = document.getElementById('offer_type_input');
+  const typeError = document.getElementById('type-error');
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      cards.forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      typeInput.value = card.dataset.type;
+      typeError.style.display = 'none';
+    });
+  });
+
+  document.querySelector('form').addEventListener('submit', function(e) {
+    if (!typeInput.value) {
+      e.preventDefault();
+      typeError.style.display = 'block';
+      document.querySelector('.offer-type-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+</script>
+{% endblock %}

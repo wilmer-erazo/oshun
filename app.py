@@ -329,6 +329,55 @@ def volunteer_cancel_offer(offer_id):
     return redirect(url_for("volunteer_dashboard"))
 
 
+@app.route("/volunteer/offer/<int:offer_id>/edit", methods=["GET", "POST"])
+@login_required
+def volunteer_edit_offer(offer_id):
+    offer = Offer.query.get_or_404(offer_id)
+    if offer.user_id != current_user.id:
+        flash("No tienes permiso para editar esta oferta.", "danger")
+        return redirect(url_for("volunteer_dashboard"))
+    if offer.status != "pending":
+        flash("Solo puedes editar ofertas pendientes.", "warning")
+        return redirect(url_for("volunteer_dashboard"))
+
+    shelters = Shelter.query.filter_by(is_active=True).all()
+    today = date.today().isoformat()
+
+    if request.method == "POST":
+        offer_type = request.form.get("offer_type")
+        title = request.form.get("title", "").strip()
+        description = request.form.get("description", "").strip()
+        preferred_date_str = request.form.get("preferred_date")
+        shelter_id = request.form.get("shelter_id") or None
+        contact_email = request.form.get("contact_email", "").strip()
+        contact_phone = request.form.get("contact_phone", "").strip()
+
+        if not offer_type or not title:
+            flash("Por favor completa los campos obligatorios.", "warning")
+            return render_template("volunteer/offer_edit.html", offer=offer, shelters=shelters, today=today)
+
+        preferred_date = None
+        if preferred_date_str:
+            try:
+                preferred_date = date.fromisoformat(preferred_date_str)
+            except ValueError:
+                pass
+
+        offer.offer_type = offer_type
+        offer.title = title
+        offer.description = description
+        offer.preferred_date = preferred_date
+        offer.shelter_id = int(shelter_id) if shelter_id else None
+        offer.contact_email = contact_email or None
+        offer.contact_phone = contact_phone or None
+        db.session.commit()
+
+        flash("¡Oferta actualizada exitosamente!", "success")
+        return redirect(url_for("volunteer_dashboard"))
+
+    return render_template("volunteer/offer_edit.html", offer=offer, shelters=shelters, today=today)
+
+
 # ─── Coordinator ───────────────────────────────────────────────────────────────
 
 @app.route("/coordinator/dashboard")
