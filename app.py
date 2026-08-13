@@ -414,6 +414,17 @@ def admin_assign_offer(offer_id):
     db.session.commit()
 
     _notify_offer_accepted(offer)
+    type_labels = {"activity": "Actividad 🎨", "food": "Alimentos 🍱", "goods": "Artículos 📦"}
+    shelter_name = offer.shelter.name if offer.shelter else "Por asignar"
+    wa_msg = (
+        f"✅ *Oferta aceptada en Oshún*\n\n"
+        f"👤 *Voluntario:* {offer.volunteer.name}\n"
+        f"📋 *Tipo:* {type_labels.get(offer.offer_type, offer.offer_type)}\n"
+        f"📝 *Título:* {offer.title}\n"
+        f"🏠 *Albergue:* {shelter_name}\n"
+        f"📅 *Fecha:* {offer.scheduled_date.strftime('%d/%m/%Y') if offer.scheduled_date else 'Por confirmar'}\n"
+    )
+    _send_whatsapp(wa_msg)
     flash("Oferta asignada exitosamente.", "success")
     return redirect(url_for("admin_dashboard"))
 
@@ -579,6 +590,13 @@ def _notify_offer_accepted(offer):
             f"Fecha: {offer.scheduled_date.strftime('%d/%m/%Y') if offer.scheduled_date else 'Por confirmar'}\n"
             f"Dirección: {shelter.address if shelter else ''}\n\n"
             f"¡Gracias por tu ayuda!\n— Equipo Oshún"
+        )
+        msg.html = render_template(
+            "auth/offer_accepted_email.html",
+            name=user.name,
+            offer=offer,
+            shelter=shelter,
+            base_url=app.config.get("BASE_URL", "http://localhost:5001"),
         )
         mail.send(msg)
     except Exception:
