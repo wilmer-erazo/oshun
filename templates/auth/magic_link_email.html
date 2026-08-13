@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background:#f8fafc; margin:0; padding:0; }
+    .container { max-width:520px; margin:40px auto; background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); overflow:hidden; }
+    .header { background:linear-gradient(135deg,#1a56db,#38bdf8); padding:40px; text-align:center; color:#fff; }
+    .header h1 { margin:0 0 8px; font-size:1.6rem; font-weight:800; }
+    .body { padding:40px; }
+    .btn { display:inline-block; background:#1a56db; color:#fff !important; text-decoration:none; padding:14px 32px; border-radius:10px; font-weight:700; font-size:1rem; margin:24px 0; }
+    .footer { background:#f1f5f9; padding:24px 40px; font-size:0.8rem; color:#94a3b8; text-align:center; }
+    .link-small { word-break:break-all; color:#64748b; font-size:0.82rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div style="font-size:3rem;margin-bottom:8px">🏡</div>
+      <h1>Albergues Cali</h1>
+      <p style="opacity:0.85;margin:0">Tu enlace de acceso</p>
+    </div>
+    <div class="body">
+      <p>Hola <strong>{{ name }}</strong>,</p>
+      <p>Solicitaste acceso a la plataforma de coordinación de albergues. Haz clic en el botón para ingresar:</p>
+      <div style="text-align:center">
+        <a href="{{ link }}" class="btn">Ingresar ahora →</a>
+      </div>
+      <p style="color:#64748b;font-size:0.875rem">
+        Este enlace expira en <strong>1 hora</strong> y solo puede usarse una vez.
+        Si no solicitaste este acceso, ignora este mensaje.
+      </p>
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0"/>
+      <p style="color:#94a3b8;font-size:0.8rem">O copia y pega este enlace en tu navegador:</p>
+      <p class="link-small">{{ link }}</p>
+    </div>
+    <div class="footer">
+      © 2026 Albergues Cali · Con ❤️ para Cali
+    </div>
+  </div>
+</body>
+</html>

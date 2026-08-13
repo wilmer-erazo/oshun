@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}{% if shelter %}Editar{% else %}Nuevo{% endif %} Albergue — Albergues Cali{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col">
+        <h2 class="section-title" data-aos="fade-right">
+          <i class="ti ti-building-community text-primary me-2"></i>
+          {% if shelter %}Editar: {{ shelter.name }}{% else %}Nuevo Albergue{% endif %}
+        </h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="container">
+    <div class="card" data-aos="fade-up">
+      <div class="card-body">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">Nombre del albergue <span class="text-danger">*</span></label>
+              <input type="text" name="name" class="form-control" required
+                     value="{{ shelter.name if shelter else '' }}"
+                     placeholder="Ej: Albergue Siloé"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Barrio / Sector</label>
+              <input type="text" name="neighborhood" class="form-control"
+                     value="{{ shelter.neighborhood if shelter else '' }}"
+                     placeholder="Ej: Siloé"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Dirección <span class="text-danger">*</span></label>
+              <input type="text" name="address" class="form-control" required
+                     value="{{ shelter.address if shelter else '' }}"
+                     placeholder="Cra 1 # 45-20, Siloé, Cali"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Latitud <span class="text-danger">*</span></label>
+              <input type="number" step="0.0001" name="lat" class="form-control" required
+                     value="{{ shelter.lat if shelter else '3.4516' }}"
+                     placeholder="3.4516"/>
+              <div class="form-text">Búscala en Google Maps: clic derecho → "¿Qué hay aquí?"</div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Longitud <span class="text-danger">*</span></label>
+              <input type="number" step="0.0001" name="lng" class="form-control" required
+                     value="{{ shelter.lng if shelter else '-76.5320' }}"
+                     placeholder="-76.5320"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Capacidad total</label>
+              <input type="number" name="capacity" class="form-control" min="0"
+                     value="{{ shelter.capacity if shelter else 0 }}"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Ocupación actual</label>
+              <input type="number" name="current_occupancy" class="form-control" min="0"
+                     value="{{ shelter.current_occupancy if shelter else 0 }}"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Tipo de población</label>
+              <select name="population_type" class="form-select">
+                {% set types = [('families','Familias'),('elderly','Adultos mayores'),('children','Niños'),('migrants','Migrantes'),('mixed','Mixta')] %}
+                {% for val, label in types %}
+                  <option value="{{ val }}"
+                    {% if shelter and shelter.population_type == val %}selected{% endif %}>
+                    {{ label }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label">Notas internas</label>
+              <textarea name="notes" class="form-control" rows="3"
+                        placeholder="Información relevante sobre el albergue, acceso, contacto...">{{ shelter.notes if shelter else '' }}</textarea>
+            </div>
+            {% if shelter %}
+            <div class="col-12">
+              <label class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" name="is_active"
+                       {% if shelter.is_active %}checked{% endif %}/>
+                <span class="form-check-label">Albergue activo</span>
+              </label>
+            </div>
+            {% endif %}
+          </div>
+          <div class="mt-4 d-flex gap-3">
+            <button type="submit" class="btn btn-primary btn-lg px-5">
+              <i class="ti ti-device-floppy me-2"></i>
+              {% if shelter %}Guardar cambios{% else %}Crear albergue{% endif %}
+            </button>
+            <a href="{{ url_for('admin_shelters') }}" class="btn btn-outline-secondary btn-lg">
+              Cancelar
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

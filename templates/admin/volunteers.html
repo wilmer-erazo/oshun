@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}Voluntarios — Administración{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <h2 class="section-title" data-aos="fade-right">
+          <i class="ti ti-users text-primary me-2"></i>Inventario de Voluntarios
+        </h2>
+        <p class="section-sub" data-aos="fade-right" data-aos-delay="60">
+          {{ volunteers|length }} persona{{ 's' if volunteers|length != 1 }} registradas
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="card" data-aos="fade-up">
+    {% if volunteers %}
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Celular</th>
+            <th>Rol</th>
+            <th class="text-center">Ayudas</th>
+            <th>Última ayuda</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for v in volunteers %}
+          {% set last_offer = v.offers | sort(attribute='created_at') | last if v.offers else none %}
+          {% set phone = none %}
+          {% for o in v.offers | sort(attribute='created_at', reverse=true) %}
+            {% if o.contact_phone and not phone %}
+              {% set phone = o.contact_phone %}
+            {% endif %}
+          {% endfor %}
+          <tr>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-sm"
+                      style="background:linear-gradient(135deg,#1a56db,#38bdf8);font-weight:700;color:#fff">
+                  {{ v.name[0].upper() }}
+                </span>
+                <span class="fw-semibold">{{ v.name }}</span>
+              </div>
+            </td>
+            <td class="text-muted small">{{ v.email }}</td>
+            <td class="text-muted small">
+              {% set ns = namespace(phone=none) %}
+              {% for o in v.offers | sort(attribute='created_at', reverse=true) %}
+                {% if o.contact_phone and not ns.phone %}{% set ns.phone = o.contact_phone %}{% endif %}
+              {% endfor %}
+              {{ ns.phone or '—' }}
+            </td>
+            <td>
+              {% if v.role == 'coordinator' %}
+                <span class="badge bg-green-lt">Coordinador/a</span>
+              {% else %}
+                <span class="badge bg-blue-lt">Voluntario/a</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <span class="fw-semibold">{{ v.offers | length }}</span>
+            </td>
+            <td class="text-muted small">
+              {% if v.offers %}
+                {% set last = v.offers | sort(attribute='created_at') | last %}
+                {{ last.created_at.strftime('%d/%m/%Y') }}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td>
+              <button class="btn btn-sm btn-outline-secondary"
+                      data-bs-toggle="modal"
+                      data-bs-target="#roleModal"
+                      data-user-id="{{ v.id }}"
+                      data-user-name="{{ v.name }}"
+                      data-user-role="{{ v.role }}">
+                <i class="ti ti-edit me-1"></i>Rol
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="card-body text-center py-5">
+        <div style="font-size:3rem;margin-bottom:1rem">👥</div>
+        <p class="text-muted mb-0">Aún no hay voluntarios registrados.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Role Modal -->
+<div class="modal modal-blur fade" id="roleModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Cambiar rol</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="roleForm">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="role-user-name"></p>
+          <div class="mb-3">
+            <label class="form-label">Nuevo rol</label>
+            <select name="role" id="role-select" class="form-select" required>
+              <option value="volunteer">Voluntario/a</option>
+              <option value="coordinator">Coordinador/a</option>
+              <option value="admin">Administrador/a</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('roleModal').addEventListener('show.bs.modal', function(e) {
+    const btn = e.relatedTarget;
+    document.getElementById('roleForm').action = `/admin/volunteers/${btn.dataset.userId}/role`;
+    document.getElementById('role-user-name').textContent = btn.dataset.userName;
+    document.getElementById('role-select').value = btn.dataset.userRole;
+  });
+</script>
+{% endblock %}

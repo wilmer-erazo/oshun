@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Albergues — Administración{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col">
+        <h2 class="section-title" data-aos="fade-right">
+          <i class="ti ti-building-community text-primary me-2"></i>Gestión de Albergues
+        </h2>
+      </div>
+      <div class="col-auto ms-auto" data-aos="fade-left">
+        <a href="{{ url_for('admin_shelter_new') }}" class="btn btn-primary">
+          <i class="ti ti-plus me-2"></i>Nuevo albergue
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="container">
+    <div class="row g-4">
+      {% for shelter in shelters %}
+      <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 70 }}">
+        <div class="card h-100">
+          <div class="card-header d-flex align-items-center justify-content-between">
+            <h4 class="card-title mb-0" style="font-size:0.95rem">{{ shelter.name }}</h4>
+            <span class="badge {% if shelter.is_active %}bg-success-lt{% else %}bg-secondary-lt{% endif %}">
+              {% if shelter.is_active %}Activo{% else %}Inactivo{% endif %}
+            </span>
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-2">
+              <i class="ti ti-map-pin me-1"></i>{{ shelter.neighborhood or '—' }} · {{ shelter.address }}
+            </p>
+            <p class="text-muted small mb-3">
+              <i class="ti ti-users me-1"></i>{{ shelter.population_label() }}
+            </p>
+
+            {% set pct = shelter.occupancy_pct() %}
+            <div class="d-flex justify-content-between small mb-1">
+              <span>Ocupación</span>
+              <span class="fw-semibold {% if pct > 80 %}text-danger{% elif pct > 50 %}text-warning{% else %}text-success{% endif %}">
+                {{ shelter.current_occupancy }}/{{ shelter.capacity }}
+              </span>
+            </div>
+            <div class="progress mb-3" style="height:6px">
+              <div class="progress-bar {% if pct > 80 %}occ-high{% elif pct > 50 %}occ-medium{% else %}occ-low{% endif %}"
+                   style="width:{{ pct }}%"></div>
+            </div>
+
+            <!-- Assign coordinator -->
+            <div class="mb-2">
+              <small class="text-muted d-block mb-1">
+                <i class="ti ti-user-check me-1"></i>
+                Coordinador/a:
+                {% if shelter.coordinator_user %}
+                  <strong>{{ shelter.coordinator_user.name }}</strong>
+                {% else %}
+                  <span class="text-danger">Sin asignar</span>
+                {% endif %}
+              </small>
+              <button class="btn btn-sm btn-outline-secondary w-100" data-bs-toggle="modal"
+                      data-bs-target="#coordinatorModal"
+                      data-shelter-id="{{ shelter.id }}"
+                      data-shelter-name="{{ shelter.name }}">
+                <i class="ti ti-user-plus me-1"></i>Asignar coordinador
+              </button>
+            </div>
+          </div>
+          <div class="card-footer d-flex gap-2">
+            <a href="{{ url_for('admin_shelter_edit', shelter_id=shelter.id) }}"
+               class="btn btn-sm btn-outline-primary flex-fill">
+              <i class="ti ti-edit me-1"></i>Editar
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if not shelters %}
+        <div class="col-12">
+          <div class="card">
+            <div class="card-body text-center py-5">
+              <div style="font-size:3rem;margin-bottom:1rem">🏗️</div>
+              <p class="text-muted">No hay albergues registrados. Crea el primero.</p>
+              <a href="{{ url_for('admin_shelter_new') }}" class="btn btn-primary">
+                <i class="ti ti-plus me-2"></i>Nuevo albergue
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Coordinator Modal -->
+<div class="modal modal-blur fade" id="coordinatorModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Asignar coordinador/a</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="coordinatorForm">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="coord-shelter-name"></p>
+          <div class="mb-3">
+            <label class="form-label">Voluntario registrado</label>
+            <select name="user_id" class="form-select" required>
+              <option value="">Selecciona un voluntario…</option>
+              {% for v in volunteers %}
+                <option value="{{ v.id }}">{{ v.name }} — {{ v.email }}</option>
+              {% endfor %}
+            </select>
+            <div class="form-text">El rol del usuario cambiará a "Coordinador".</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Confirmar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const coordModal = document.getElementById('coordinatorModal');
+  coordModal.addEventListener('show.bs.modal', function(event) {
+    const btn = event.relatedTarget;
+    document.getElementById('coordinatorForm').action =
+      `/admin/shelters/${btn.dataset.shelterId}/assign-coordinator`;
+    document.getElementById('coord-shelter-name').textContent =
+      `Albergue: ${btn.dataset.shelterName}`;
+  });
+</script>
+{% endblock %}

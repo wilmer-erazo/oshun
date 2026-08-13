@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Ofertas — Albergues Cali{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <div class="row align-items-center">
+      <div class="col">
+        <h2 class="section-title" data-aos="fade-right">
+          <i class="ti ti-clipboard-list text-primary me-2"></i>Gestión de Ofertas
+        </h2>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <div class="container">
+    <!-- Filter tabs -->
+    <div class="card mb-4" data-aos="fade-up">
+      <div class="card-header">
+        <ul class="nav nav-tabs card-header-tabs">
+          <li class="nav-item">
+            <a class="nav-link {% if current_status == 'all' %}active{% endif %}"
+               href="{{ url_for('admin_offers', status='all') }}">Todas</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if current_status == 'pending' %}active{% endif %}"
+               href="{{ url_for('admin_offers', status='pending') }}">
+              Pendientes <span class="badge bg-warning-lt text-warning ms-1">{{ offers|selectattr('status','equalto','pending')|list|length if current_status == 'all' else offers|length }}</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if current_status == 'accepted' %}active{% endif %}"
+               href="{{ url_for('admin_offers', status='accepted') }}">Aceptadas</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link {% if current_status == 'rejected' %}active{% endif %}"
+               href="{{ url_for('admin_offers', status='rejected') }}">Rechazadas</a>
+          </li>
+        </ul>
+      </div>
+      {% if offers %}
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Voluntario</th>
+              <th>Tipo</th>
+              <th>Título</th>
+              <th>Albergue</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for offer in offers %}
+            <tr>
+              <td>
+                <div class="fw-semibold small">{{ offer.volunteer.name }}</div>
+                <div class="text-muted" style="font-size:0.75rem">{{ offer.volunteer.email }}</div>
+              </td>
+              <td>
+                <span class="badge bg-blue-lt">{{ offer.type_label() }}</span>
+              </td>
+              <td>
+                <div>{{ offer.title }}</div>
+                {% if offer.description %}
+                  <div class="text-muted small">{{ offer.description[:60] }}{% if offer.description|length > 60 %}…{% endif %}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if offer.shelter %}
+                  <span class="small">{{ offer.shelter.name }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="small">
+                {% if offer.scheduled_date %}
+                  {{ offer.scheduled_date.strftime('%d/%m/%Y') }}
+                {% elif offer.preferred_date %}
+                  <span class="text-muted">Pref: {{ offer.preferred_date.strftime('%d/%m/%Y') }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% set badge_class, badge_label = offer.status_badge() %}
+                <span class="badge {{ badge_class }}">{{ badge_label }}</span>
+              </td>
+              <td>
+                {% if offer.status == 'pending' %}
+                  <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                          data-bs-target="#assignModal"
+                          data-offer-id="{{ offer.id }}"
+                          data-offer-title="{{ offer.title }}"
+                          data-preferred-date="{{ offer.preferred_date.isoformat() if offer.preferred_date else '' }}">
+                    Asignar
+                  </button>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="card-body text-center py-5">
+          <p class="text-muted">No hay ofertas en esta categoría.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal modal-blur fade" id="assignModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Asignar oferta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="assignForm">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="modal-offer-title"></p>
+          <div class="mb-3">
+            <label class="form-label">Albergue <span class="text-danger">*</span></label>
+            <select name="shelter_id" class="form-select" required>
+              <option value="">Selecciona…</option>
+              {% for s in shelters %}
+                <option value="{{ s.id }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha confirmada <span class="text-danger">*</span></label>
+            <input type="date" name="scheduled_date" class="form-control" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nota para el voluntario</label>
+            <textarea name="admin_notes" class="form-control" rows="2" placeholder="Instrucciones adicionales…"></textarea>
+          </div>
+          <input type="hidden" name="action" value="accept"/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger me-auto"
+                  onclick="setReject()">
+            <i class="ti ti-x me-1"></i>Rechazar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-check me-1"></i>Confirmar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const assignModal = document.getElementById('assignModal');
+  assignModal.addEventListener('show.bs.modal', function(event) {
+    const btn = event.relatedTarget;
+    document.getElementById('assignForm').action = `/admin/offers/${btn.dataset.offerId}/assign`;
+    document.getElementById('modal-offer-title').textContent = btn.dataset.offerTitle;
+    if (btn.dataset.preferredDate) {
+      document.querySelector('[name="scheduled_date"]').value = btn.dataset.preferredDate;
+    }
+  });
+
+  function setReject() {
+    document.querySelector('[name="action"]').value = 'reject';
+    document.getElementById('assignForm').submit();
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Dashboard Admin — Albergues Cali{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <h2 class="section-title" data-aos="fade-right">
+      <i class="ti ti-layout-dashboard text-primary me-2"></i>Dashboard
+    </h2>
+    <p class="section-sub" data-aos="fade-right" data-aos-delay="60">Resumen y ofertas pendientes de asignación.</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+    <!-- Stats -->
+    <div class="row g-3 mb-5">
+      <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="0">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-building-community text-primary me-2" style="font-size:1.3rem"></i>
+              <span class="stat-label">Albergues</span>
+            </div>
+            <div class="stat-number">{{ total_shelters }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="80">
+        <div class="card stat-card h-100" style="border-left-color:#ed8936">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-clock me-2" style="font-size:1.3rem;color:#ed8936"></i>
+              <span class="stat-label">Ofertas pendientes</span>
+            </div>
+            <div class="stat-number" style="color:#ed8936">{{ pending_offers }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="160">
+        <div class="card stat-card h-100" style="border-left-color:#38a169">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-calendar-event me-2" style="font-size:1.3rem;color:#38a169"></i>
+              <span class="stat-label">Ayudas hoy</span>
+            </div>
+            <div class="stat-number" style="color:#38a169">{{ aids_today }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-lg-3" data-aos="fade-up" data-aos-delay="240">
+        <div class="card stat-card h-100" style="border-left-color:#8b5cf6">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-users me-2" style="font-size:1.3rem;color:#8b5cf6"></i>
+              <span class="stat-label">Voluntarios</span>
+            </div>
+            <div class="stat-number" style="color:#8b5cf6">{{ total_volunteers }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending offers table -->
+    <div class="card" data-aos="fade-up">
+      <div class="card-header d-flex align-items-center">
+        <h3 class="card-title mb-0">
+          <i class="ti ti-clipboard-list me-2 text-primary"></i>Ofertas pendientes de asignación
+        </h3>
+        <div class="ms-auto">
+          <a href="{{ url_for('admin_offers') }}" class="btn btn-sm btn-outline-primary">Ver todas</a>
+        </div>
+      </div>
+      {% if pending %}
+      <div class="table-responsive">
+        <table class="table table-vcenter card-table">
+          <thead>
+            <tr>
+              <th>Voluntario</th>
+              <th>Tipo</th>
+              <th>Título</th>
+              <th>Fecha preferida</th>
+              <th>Recibida</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for offer in pending %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center">
+                  <span class="avatar avatar-sm me-2" style="background:linear-gradient(135deg,#1a56db,#38bdf8)">
+                    {{ offer.volunteer.name[0].upper() }}
+                  </span>
+                  <div>
+                    <div class="fw-semibold small">{{ offer.volunteer.name }}</div>
+                    <div class="text-muted" style="font-size:0.75rem">{{ offer.volunteer.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>
+                <span class="badge bg-blue-lt">
+                  {% if offer.offer_type == 'activity' %}🎨 Actividad
+                  {% elif offer.offer_type == 'food' %}🍱 Alimentos
+                  {% else %}📦 Artículos{% endif %}
+                </span>
+              </td>
+              <td>{{ offer.title }}</td>
+              <td>
+                {% if offer.preferred_date %}
+                  {{ offer.preferred_date.strftime('%d/%m/%Y') }}
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="text-muted small">{{ offer.created_at.strftime('%d/%m') }}</td>
+              <td>
+                <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#assignModal"
+                        data-offer-id="{{ offer.id }}"
+                        data-offer-title="{{ offer.title }}"
+                        data-preferred-date="{{ offer.preferred_date.isoformat() if offer.preferred_date else '' }}">
+                  Asignar
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <div class="card-body text-center py-5">
+          <div style="font-size:3rem;margin-bottom:1rem">✅</div>
+          <p class="text-muted mb-0">No hay ofertas pendientes. ¡Todo al día!</p>
+        </div>
+      {% endif %}
+    </div>
+</div>
+
+<!-- Assign Modal -->
+<div class="modal modal-blur fade" id="assignModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-sm modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Asignar oferta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="POST" id="assignForm">
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="modal-offer-title"></p>
+          <div class="mb-3">
+            <label class="form-label">Albergue <span class="text-danger">*</span></label>
+            <select name="shelter_id" class="form-select" required>
+              <option value="">Selecciona…</option>
+              {% for s in shelters %}
+                <option value="{{ s.id }}">{{ s.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fecha confirmada <span class="text-danger">*</span></label>
+            <input type="date" name="scheduled_date" class="form-control" required/>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Nota para el voluntario</label>
+            <textarea name="admin_notes" class="form-control" rows="2"
+                      placeholder="Ej: Llevar materiales para 40 personas"></textarea>
+          </div>
+          <input type="hidden" name="action" value="accept"/>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger me-auto"
+                  onclick="document.getElementById('actionInput').value='reject';document.getElementById('assignForm').submit()">
+            <i class="ti ti-x me-1"></i>Rechazar
+          </button>
+          <button type="submit" class="btn btn-primary">
+            <i class="ti ti-check me-1"></i>Confirmar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  const assignModal = document.getElementById('assignModal');
+  assignModal.addEventListener('show.bs.modal', function(event) {
+    const btn = event.relatedTarget;
+    const offerId = btn.dataset.offerId;
+    const offerTitle = btn.dataset.offerTitle;
+    const preferredDate = btn.dataset.preferredDate;
+
+    document.getElementById('assignForm').action = `/admin/offers/${offerId}/assign`;
+    document.getElementById('modal-offer-title').textContent = offerTitle;
+    if (preferredDate) {
+      document.querySelector('[name="scheduled_date"]').value = preferredDate;
+    }
+  });
+</script>
+{% endblock %}

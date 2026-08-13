@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Mi Albergue — Albergues Cali{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <h2 class="section-title" data-aos="fade-right">
+      <i class="ti ti-building-community text-primary me-2"></i>
+      {% if shelter %}{{ shelter.name }}{% else %}Mi Albergue{% endif %}
+    </h2>
+    {% if shelter %}
+    <p class="section-sub" data-aos="fade-right" data-aos-delay="60">
+      <i class="ti ti-map-pin me-1"></i>{{ shelter.address }}
+    </p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="container pb-5">
+    {% if not shelter %}
+      <div class="card" data-aos="fade-up">
+        <div class="card-body text-center py-5">
+          <div style="font-size:3rem;margin-bottom:1rem">🏗️</div>
+          <p class="text-muted">No tienes un albergue asignado. Contacta al administrador.</p>
+        </div>
+      </div>
+    {% else %}
+
+    <!-- Shelter stats -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-4" data-aos="fade-up" data-aos-delay="0">
+        <div class="card stat-card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-users text-primary me-2" style="font-size:1.3rem"></i>
+              <span class="stat-label">Ocupación actual</span>
+            </div>
+            <div class="stat-number">{{ shelter.current_occupancy }}</div>
+            <div class="text-muted small">de {{ shelter.capacity }} cupos</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-4" data-aos="fade-up" data-aos-delay="80">
+        <div class="card stat-card h-100" style="border-left-color:#38a169">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-calendar-event me-2" style="font-size:1.3rem;color:#38a169"></i>
+              <span class="stat-label">Ayudas programadas</span>
+            </div>
+            <div class="stat-number" style="color:#38a169">{{ upcoming|length }}</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-4" data-aos="fade-up" data-aos-delay="160">
+        <div class="card stat-card h-100" style="border-left-color:#8b5cf6">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-2">
+              <i class="ti ti-users me-2" style="font-size:1.3rem;color:#8b5cf6"></i>
+              <span class="stat-label">Tipo de población</span>
+            </div>
+            <div class="fw-bold" style="font-size:1.1rem;color:#8b5cf6">{{ shelter.population_label() }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Occupancy update -->
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card" data-aos="fade-up">
+          <div class="card-header">
+            <h3 class="card-title mb-0">
+              <i class="ti ti-refresh me-2 text-primary"></i>Actualizar ocupación
+            </h3>
+          </div>
+          <div class="card-body">
+            {% set pct = shelter.occupancy_pct() %}
+            <div class="d-flex justify-content-between mb-1 small">
+              <span>Actual</span>
+              <span class="fw-semibold {% if pct > 80 %}text-danger{% elif pct > 50 %}text-warning{% else %}text-success{% endif %}">
+                {{ shelter.current_occupancy }}/{{ shelter.capacity }} ({{ pct }}%)
+              </span>
+            </div>
+            <div class="progress mb-4" style="height:10px">
+              <div class="progress-bar {% if pct > 80 %}occ-high{% elif pct > 50 %}occ-medium{% else %}occ-low{% endif %}"
+                   style="width:{{ pct }}%"></div>
+            </div>
+            <form method="POST" action="{{ url_for('coordinator_occupancy') }}">
+              <div class="input-group">
+                <input type="number" name="occupancy" class="form-control" min="0"
+                       max="{{ shelter.capacity }}" value="{{ shelter.current_occupancy }}"
+                       required/>
+                <span class="input-group-text">/ {{ shelter.capacity }}</span>
+              </div>
+              <button type="submit" class="btn btn-primary w-100 mt-3">
+                <i class="ti ti-check me-2"></i>Actualizar
+              </button>
+            </form>
+            {% if shelter.notes %}
+              <hr/>
+              <p class="small text-muted mb-0">
+                <i class="ti ti-info-circle me-1"></i>{{ shelter.notes }}
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Upcoming schedule -->
+      <div class="col-md-8">
+        <div class="card" data-aos="fade-up" data-aos-delay="80">
+          <div class="card-header">
+            <h3 class="card-title mb-0">
+              <i class="ti ti-calendar me-2 text-primary"></i>Próximas ayudas
+            </h3>
+          </div>
+          {% if upcoming %}
+          <div class="table-responsive">
+            <table class="table table-vcenter card-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Actividad</th>
+                  <th>Voluntario</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for offer in upcoming %}
+                <tr>
+                  <td>
+                    <strong>{{ offer.scheduled_date.strftime('%d/%m') }}</strong>
+                    <div class="text-muted small">{{ offer.scheduled_date.strftime('%A') }}</div>
+                  </td>
+                  <td>
+                    <span class="badge bg-blue-lt">{{ offer.type_label() }}</span>
+                  </td>
+                  <td>
+                    <div>{{ offer.title }}</div>
+                    {% if offer.description %}
+                      <div class="text-muted small">{{ offer.description[:60] }}…</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="small fw-semibold">{{ offer.volunteer.name }}</div>
+                    <div class="text-muted" style="font-size:0.75rem">{{ offer.volunteer.email }}</div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          {% else %}
+            <div class="card-body text-center py-5">
+              <div style="font-size:3rem;margin-bottom:1rem">📅</div>
+              <p class="text-muted">No hay ayudas programadas próximamente.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

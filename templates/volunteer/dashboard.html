@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Mi Panel — Albergues Cali{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <div class="d-flex align-items-center justify-content-between gap-3">
+      <div>
+        <h2 class="section-title" data-aos="fade-right">
+          <i class="ti ti-clipboard text-primary me-2"></i>Voluntario
+        </h2>
+        <p class="section-sub" data-aos="fade-right" data-aos-delay="60">
+          Hola, <strong>{{ current_user.name }}</strong> 👋 — aquí están tus contribuciones de ayuda.
+        </p>
+      </div>
+      <div data-aos="fade-left">
+        <a href="{{ url_for('volunteer_offer') }}" class="btn btn-primary">
+          <i class="ti ti-plus me-2"></i>Nueva oferta
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+    {% if offers %}
+      <div class="row g-3">
+        {% for offer in offers %}
+        <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 70 }}">
+          <div class="card h-100">
+            <div class="card-body">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="badge bg-blue-lt text-blue fs-5" style="font-size:1.4rem!important;padding:.4rem .6rem">
+                  {% if offer.offer_type == 'activity' %}🎨
+                  {% elif offer.offer_type == 'food' %}🍱
+                  {% else %}📦{% endif %}
+                </span>
+                {% set badge_class, badge_label = offer.status_badge() %}
+                <span class="badge {{ badge_class }}">{{ badge_label }}</span>
+              </div>
+              <h4 class="card-title mt-2 mb-1" style="font-size:1rem">{{ offer.title }}</h4>
+              <p class="text-muted small mb-2">{{ offer.type_label() }}</p>
+              {% if offer.description %}
+                <p class="small text-secondary mb-2" style="line-clamp:2;overflow:hidden">
+                  {{ offer.description[:120] }}{% if offer.description|length > 120 %}…{% endif %}
+                </p>
+              {% endif %}
+              <div class="d-flex flex-wrap gap-2 small mt-auto">
+                {% if offer.preferred_date %}
+                  <span class="text-muted">
+                    <i class="ti ti-calendar me-1"></i>Preferida: {{ offer.preferred_date.strftime('%d/%m/%Y') }}
+                  </span>
+                {% endif %}
+                {% if offer.scheduled_date %}
+                  <span class="text-success fw-semibold">
+                    <i class="ti ti-check me-1"></i>Confirmada: {{ offer.scheduled_date.strftime('%d/%m/%Y') }}
+                  </span>
+                {% endif %}
+                {% if offer.shelter %}
+                  <span class="text-muted">
+                    <i class="ti ti-building-community me-1"></i>{{ offer.shelter.name }}
+                  </span>
+                {% endif %}
+              </div>
+              {% if offer.admin_notes %}
+                <div class="alert alert-light mt-2 mb-0 py-2 px-3 small">
+                  <i class="ti ti-message me-1"></i>{{ offer.admin_notes }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" data-aos="fade-up">
+        <div class="card-body text-center py-6">
+          <div style="font-size:4rem;margin-bottom:1rem">🤝</div>
+          <h3 class="fw-bold mb-2">Aún no has enviado ninguna oferta</h3>
+          <p class="text-muted mb-4">
+            Registra tu primera contribución y el equipo la coordinará con el albergue ideal.
+          </p>
+          <a href="{{ url_for('volunteer_offer') }}" class="btn btn-primary btn-lg">
+            <i class="ti ti-plus me-2"></i>Registrar mi primera ayuda
+          </a>
+        </div>
+      </div>
+    {% endif %}
+</div>
+{% endblock %}

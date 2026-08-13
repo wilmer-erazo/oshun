@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+  <title>{% block title %}Albergues Cali{% endblock %}</title>
+
+  <!-- Tabler CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/css/tabler.min.css"/>
+  <!-- Tabler Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css"/>
+  <!-- AOS -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <!-- Custom -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}"/>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- ── Top navbar with tab navigation ──────────────────────────────── -->
+  <nav class="site-nav navbar navbar-expand-md sticky-top">
+    <div class="container">
+
+      <!-- Brand -->
+      <a href="{{ url_for('index') }}" class="navbar-brand">
+        🏡 Albergues Cali
+      </a>
+
+      <!-- Mobile toggle -->
+      <button class="navbar-toggler border-0" type="button"
+              data-bs-toggle="collapse" data-bs-target="#navMenu"
+              aria-controls="navMenu" aria-expanded="false">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navMenu">
+
+        <!-- Tab links — centered -->
+        <ul class="navbar-nav mx-auto nav-tabs-bar">
+
+          <li class="nav-item">
+            <a class="nav-link {% if request.endpoint == 'index' %}active{% endif %}"
+               href="{{ url_for('index') }}">
+              <i class="ti ti-home me-1"></i>Inicio
+            </a>
+          </li>
+
+          {% if current_user.is_authenticated %}
+
+            {# ── Admin tabs ── #}
+            {% if current_user.is_admin() %}
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+                   href="{{ url_for('admin_dashboard') }}">
+                  <i class="ti ti-layout-dashboard me-1"></i>Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if 'admin_offers' in request.endpoint %}active{% endif %}"
+                   href="{{ url_for('admin_offers') }}">
+                  <i class="ti ti-clipboard-list me-1"></i>Ofertas
+                  {% if pending_count is defined and pending_count %}
+                    <span class="badge bg-danger badge-pill ms-1">{{ pending_count }}</span>
+                  {% endif %}
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if 'admin_shelter' in request.endpoint %}active{% endif %}"
+                   href="{{ url_for('admin_shelters') }}">
+                  <i class="ti ti-building-community me-1"></i>Albergues
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_volunteers' or request.endpoint == 'admin_change_role' %}active{% endif %}"
+                   href="{{ url_for('admin_volunteers') }}">
+                  <i class="ti ti-users me-1"></i>Voluntarios
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'admin_donations' %}active{% endif %}"
+                   href="{{ url_for('admin_donations') }}">
+                  <i class="ti ti-gift me-1"></i>Donaciones
+                </a>
+              </li>
+
+            {# ── Coordinator tabs ── #}
+            {% elif current_user.is_coordinator() %}
+              <li class="nav-item">
+                <a class="nav-link {% if 'coordinator' in request.endpoint %}active{% endif %}"
+                   href="{{ url_for('coordinator_dashboard') }}">
+                  <i class="ti ti-building-community me-1"></i>Mi Albergue
+                </a>
+              </li>
+
+            {# ── Volunteer tabs ── #}
+            {% else %}
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'volunteer_dashboard' %}active{% endif %}"
+                   href="{{ url_for('volunteer_dashboard') }}">
+                  <i class="ti ti-clipboard me-1"></i>Voluntario
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link {% if request.endpoint == 'volunteer_offer' %}active{% endif %}"
+                   href="{{ url_for('volunteer_offer') }}">
+                  <i class="ti ti-gift me-1"></i>Ofrecer Ayuda
+                </a>
+              </li>
+            {% endif %}
+
+          {% else %}
+            {# ── Public tab ── #}
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('volunteer_offer') }}">
+                <i class="ti ti-heart me-1"></i>Quiero Ayudar
+              </a>
+            </li>
+          {% endif %}
+
+        </ul>
+
+        <!-- User section — right side -->
+        <div class="d-flex align-items-center gap-2">
+          {% if current_user.is_authenticated %}
+            <div class="dropdown">
+              <a href="#" class="d-flex align-items-center gap-2 text-decoration-none text-body"
+                 data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="avatar avatar-sm avatar-rounded"
+                      style="background:linear-gradient(135deg,#1a56db,#38bdf8);font-weight:700">
+                  {{ current_user.name[0].upper() }}
+                </span>
+                <span class="d-none d-lg-inline fw-semibold" style="font-size:.875rem">
+                  {{ current_user.name }}
+                </span>
+                <i class="ti ti-chevron-down text-muted" style="font-size:.8rem"></i>
+              </a>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                <li>
+                  <span class="dropdown-item-text text-muted small">
+                    {{ current_user.email }}
+                  </span>
+                </li>
+                <li><hr class="dropdown-divider my-1"></li>
+                <li>
+                  <a href="{{ url_for('auth_logout') }}" class="dropdown-item text-danger">
+                    <i class="ti ti-logout me-2"></i>Cerrar sesión
+                  </a>
+                </li>
+              </ul>
+            </div>
+          {% else %}
+            <a href="{{ url_for('auth_login') }}" class="btn btn-primary btn-sm">
+              <i class="ti ti-user me-1"></i>Ingresar
+            </a>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── Flash alerts ─────────────────────────────────────────────────── -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="container mt-3">
+        {% for category, message in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible"
+               role="alert">
+            {% if category == 'success' %}<i class="ti ti-circle-check me-2"></i>
+            {% elif category in ('danger', 'error') %}<i class="ti ti-alert-circle me-2"></i>
+            {% elif category == 'warning' %}<i class="ti ti-alert-triangle me-2"></i>
+            {% else %}<i class="ti ti-info-circle me-2"></i>{% endif %}
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- ── Page content ─────────────────────────────────────────────────── -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- ── Footer ───────────────────────────────────────────────────────── -->
+  <footer class="site-footer mt-auto py-4">
+    <div class="container">
+      <div class="d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
+        <span class="fw-bold text-primary">🏡 Albergues Cali</span>
+        <ul class="list-inline mb-0">
+          <li class="list-inline-item">
+            <a href="{{ url_for('index') }}" class="text-muted text-decoration-none">Inicio</a>
+          </li>
+          <li class="list-inline-item ms-3">
+            <a href="{{ url_for('auth_login') }}" class="text-muted text-decoration-none">Ingresar</a>
+          </li>
+        </ul>
+        <span class="text-muted small">© 2026 Albergues Cali · Con ❤️ para Cali</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Scripts ──────────────────────────────────────────────────────── -->
+  <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0/dist/js/tabler.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="{{ url_for('static', filename='js/map.js') }}"></script>
+  <script>
+    AOS.init({ duration: 700, once: true, easing: "ease-out-cubic" });
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

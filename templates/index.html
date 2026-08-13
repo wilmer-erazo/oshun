@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+{% block title %}Albergues Cali — Coordinamos la ayuda{% endblock %}
+
+{% block content %}
+
+<!-- ── Hero ──────────────────────────────────────────────────────────── -->
+<div class="hero-section">
+  <div class="container">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6" data-aos="fade-right">
+        <h1 class="hero-title mb-3">Coordinamos<br>la ayuda</h1>
+        <p class="hero-sub mb-4">
+          Conectamos a voluntarios y donantes con los albergues de Cali
+          para que ningún refugio se quede sin apoyo.
+        </p>
+        <div class="d-flex gap-3 flex-wrap">
+          <a href="{{ url_for('volunteer_offer') }}" class="btn btn-light btn-lg">
+            <i class="ti ti-heart me-2"></i>Quiero ayudar
+          </a>
+          <a href="#mapa" class="btn btn-outline-light btn-lg">
+            <i class="ti ti-map-pin me-2"></i>Ver mapa
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-flex justify-content-end" data-aos="fade-left" data-aos-delay="150">
+        <div style="font-size:9rem;line-height:1;filter:drop-shadow(0 8px 24px rgba(0,0,0,0.2))">🏡</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Stats + quick actions ──────────────────────────────────────────── -->
+<div class="container mt-n4">
+  <div class="row g-3">
+
+    <!-- Albergues -->
+    <div class="col-sm-4" data-aos="fade-up" data-aos-delay="0">
+      <div class="card stat-card h-100">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-center mb-2">
+            <span class="text-primary me-2"><i class="ti ti-building-community" style="font-size:1.4rem"></i></span>
+            <span class="stat-label">Albergues activos</span>
+          </div>
+          <div class="stat-number mb-3">{{ shelters|length }}</div>
+          {% if current_user.is_authenticated and current_user.is_admin() %}
+            <a href="{{ url_for('admin_shelter_new') }}"
+               class="btn btn-primary btn-sm mt-auto w-100">
+              <i class="ti ti-plus me-1"></i>Registrar albergue
+            </a>
+          {% else %}
+            <a href="#directorio"
+               class="btn btn-outline-primary btn-sm mt-auto w-100">
+              <i class="ti ti-list me-1"></i>Ver directorio
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Voluntarios -->
+    <div class="col-sm-4" data-aos="fade-up" data-aos-delay="100">
+      <div class="card stat-card h-100" style="border-left-color:#38a169">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-center mb-2">
+            <span class="text-success me-2"><i class="ti ti-users" style="font-size:1.4rem"></i></span>
+            <span class="stat-label">Voluntarios</span>
+          </div>
+          <div class="stat-number mb-3" style="color:#38a169">{{ total_volunteers }}</div>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('volunteer_dashboard') }}"
+               class="btn btn-sm mt-auto w-100"
+               style="background:#38a169;color:#fff;border-color:#38a169">
+              <i class="ti ti-user me-1"></i>Mi panel
+            </a>
+          {% else %}
+            <a href="{{ url_for('auth_login') }}"
+               class="btn btn-sm mt-auto w-100"
+               style="background:#38a169;color:#fff;border-color:#38a169">
+              <i class="ti ti-user-plus me-1"></i>Registrarme como voluntario
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Ayudas hoy / Donación -->
+    <div class="col-sm-4" data-aos="fade-up" data-aos-delay="200">
+      <div class="card stat-card h-100" style="border-left-color:#ed8936">
+        <div class="card-body d-flex flex-column">
+          <div class="d-flex align-items-center mb-2">
+            <span style="color:#ed8936" class="me-2"><i class="ti ti-calendar-event" style="font-size:1.4rem"></i></span>
+            <span class="stat-label">Ayudas hoy</span>
+          </div>
+          <div class="stat-number mb-3" style="color:#ed8936">{{ aids_today }}</div>
+          <a href="{{ url_for('volunteer_offer') }}"
+             class="btn btn-sm mt-auto w-100"
+             style="background:#ed8936;color:#fff;border-color:#ed8936">
+            <i class="ti ti-gift me-1"></i>Registrar donación
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── Map ────────────────────────────────────────────────────────────── -->
+<div class="container mt-5" id="mapa">
+  <div class="row mb-3">
+    <div class="col">
+      <h2 class="fw-bold" data-aos="fade-right">
+        <i class="ti ti-map-2 text-primary me-2"></i>Albergues en Cali
+      </h2>
+      <p class="text-muted" data-aos="fade-right" data-aos-delay="80">
+        Haz clic en un punto para ver información del albergue.
+        <span class="ms-2">
+          <span style="color:#38a169">●</span> Baja ocupación &nbsp;
+          <span style="color:#ed8936">●</span> Media &nbsp;
+          <span style="color:#e53e3e">●</span> Alta
+        </span>
+      </p>
+    </div>
+  </div>
+  <div class="card" data-aos="fade-up">
+    <div class="card-body p-2">
+      <div id="map"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Shelter cards ──────────────────────────────────────────────────── -->
+<div class="container mt-5" id="directorio">
+  <h3 class="fw-bold mb-4" data-aos="fade-right">Directorio de albergues</h3>
+  <div class="row g-3">
+    {% for s in shelters %}
+    <div class="col-md-6 col-lg-4" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 80 }}">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <h4 class="card-title mb-0" style="font-size:1rem">{{ s.name }}</h4>
+            <span class="badge bg-blue-lt">{{ s.population_label() }}</span>
+          </div>
+          <p class="text-muted small mb-2">
+            <i class="ti ti-map-pin me-1"></i>{{ s.neighborhood or s.address }}
+          </p>
+          {% set pct = s.occupancy_pct() %}
+          <div class="d-flex justify-content-between small mb-1">
+            <span>Ocupación</span>
+            <span class="fw-semibold {% if pct > 80 %}text-danger{% elif pct > 50 %}text-warning{% else %}text-success{% endif %}">
+              {{ s.current_occupancy }}/{{ s.capacity }} ({{ pct }}%)
+            </span>
+          </div>
+          <div class="progress" style="height:6px">
+            <div class="progress-bar {% if pct > 80 %}occ-high{% elif pct > 50 %}occ-medium{% else %}occ-low{% endif %}"
+                 style="width:{{ pct }}%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ── CTA ────────────────────────────────────────────────────────────── -->
+<div class="container mt-5 mb-5">
+  <div class="cta-section" data-aos="zoom-in">
+    <div class="mb-3" style="font-size:3rem">🤝</div>
+    <h2 class="fw-bold mb-2">¿Quieres ayudar?</h2>
+    <p class="text-muted mb-4">
+      Puedes ofrecer actividades, donaciones de alimentos o artículos.<br>
+      El equipo coordinará tu ayuda con el albergue que más lo necesite.
+    </p>
+    <a href="{{ url_for('volunteer_offer') }}" class="btn btn-primary btn-lg px-5">
+      <i class="ti ti-plus me-2"></i>Registrar mi ayuda
+    </a>
+  </div>
+</div>
+
+{% endblock %}

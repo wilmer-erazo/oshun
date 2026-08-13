@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Revisa tu correo — Albergues Cali{% endblock %}
+
+{% block content %}
+<div class="page page-center" style="min-height:80vh;display:flex;align-items:center">
+  <div class="container container-tight py-4">
+    <div class="card card-md shadow-sm text-center" data-aos="zoom-in">
+      <div class="card-body py-5">
+
+        {% if dev_link %}
+          <!-- Dev mode: email not configured, show link directly -->
+          <div style="font-size:3.5rem;margin-bottom:1rem">🔧</div>
+          <h2 class="fw-bold mb-2">Modo desarrollo</h2>
+          <p class="text-muted mb-4">
+            El correo no está configurado todavía.<br>
+            Usa este enlace para ingresar ahora:
+          </p>
+          <a href="{{ dev_link }}"
+             class="btn btn-primary btn-lg w-100 mb-3">
+            <i class="ti ti-arrow-right me-2"></i>Ingresar ahora
+          </a>
+          <div class="alert alert-warning text-start small mb-0" role="alert">
+            <i class="ti ti-alert-triangle me-2"></i>
+            Este enlace de acceso directo solo aparece cuando el servidor de
+            correo no está configurado. En producción, llegará al email del usuario.
+          </div>
+        {% else %}
+          <!-- Normal flow: email sent -->
+          <div style="font-size:4rem;margin-bottom:1rem" data-aos="fade-down">📬</div>
+          <h2 class="fw-bold mb-2">¡Revisa tu correo!</h2>
+          <p class="text-muted mb-1">
+            Enviamos un enlace de acceso a
+          </p>
+          <p class="fw-semibold text-primary mb-4" style="font-size:1.05rem">{{ email }}</p>
+          <p class="text-muted small mb-4">
+            Haz clic en el enlace del correo para ingresar.<br>
+            El enlace expira en <strong>1 hora</strong> y solo puede usarse una vez.
+          </p>
+          <div class="alert alert-info text-start" role="alert">
+            <i class="ti ti-info-circle me-2"></i>
+            <strong>¿No ves el correo?</strong> Revisa tu carpeta de spam o correo no deseado.
+          </div>
+          <a href="{{ url_for('auth_login') }}" class="btn btn-outline-primary mt-2">
+            <i class="ti ti-refresh me-2"></i>Reenviar enlace
+          </a>
+        {% endif %}
+
+      </div>
+    </div>
+    <div class="text-center mt-3">
+      <a href="{{ url_for('index') }}" class="link-secondary">
+        <i class="ti ti-arrow-left me-1"></i>Volver al inicio
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}

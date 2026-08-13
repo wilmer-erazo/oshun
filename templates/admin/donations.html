@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}Donaciones por Albergue — Administración{% endblock %}
+
+{% block content %}
+<div class="page-top">
+  <div class="container">
+    <h2 class="section-title" data-aos="fade-right">
+      <i class="ti ti-gift text-primary me-2"></i>Donaciones por Albergue
+    </h2>
+    <p class="section-sub" data-aos="fade-right" data-aos-delay="60">
+      Registro de ayudas asignadas a cada albergue.
+    </p>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  {% for item in shelter_data %}
+  {% set s = item.shelter %}
+  {% set offers = item.offers %}
+  {% set pct = s.occupancy_pct() %}
+  <div class="card mb-4" data-aos="fade-up" data-aos-delay="{{ loop.index0 * 60 }}">
+    <div class="card-header d-flex align-items-center gap-3">
+      <h3 class="card-title mb-0">
+        <i class="ti ti-building-community me-2 text-primary"></i>{{ s.name }}
+      </h3>
+      <span class="badge {% if pct > 80 %}bg-danger-lt{% elif pct > 50 %}bg-warning-lt{% else %}bg-success-lt{% endif %} ms-1">
+        {{ s.current_occupancy }}/{{ s.capacity }} ({{ pct }}%)
+      </span>
+      <span class="ms-auto badge bg-blue-lt">
+        {{ offers|length }} ayuda{{ 's' if offers|length != 1 }}
+      </span>
+    </div>
+
+    {% if offers %}
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Título</th>
+            <th>Voluntario/a</th>
+            <th>Estado</th>
+            <th>Fecha</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in offers %}
+          {% set badge_class, badge_label = o.status_badge() %}
+          <tr>
+            <td>
+              <span class="badge bg-secondary-lt">
+                {% if o.offer_type == 'activity' %}🎨 Actividad
+                {% elif o.offer_type == 'food' %}🍱 Alimentos
+                {% else %}📦 Artículos{% endif %}
+              </span>
+            </td>
+            <td class="fw-semibold">{{ o.title }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-xs"
+                      style="background:linear-gradient(135deg,#1a56db,#38bdf8);color:#fff;font-weight:700">
+                  {{ o.volunteer.name[0].upper() }}
+                </span>
+                <span class="small">{{ o.volunteer.name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge {{ badge_class }}">
+                {% if o.status == 'accepted' %}<i class="ti ti-circle-check me-1 text-success"></i>
+                {% elif o.status == 'pending' %}<i class="ti ti-clock me-1 text-warning"></i>
+                {% else %}<i class="ti ti-x me-1 text-danger"></i>{% endif %}
+                {{ badge_label }}
+              </span>
+            </td>
+            <td class="text-muted small">
+              {% if o.scheduled_date %}
+                {{ o.scheduled_date.strftime('%d/%m/%Y') }}
+              {% elif o.preferred_date %}
+                {{ o.preferred_date.strftime('%d/%m/%Y') }}
+              {% else %}—{% endif %}
+            </td>
+            <td class="text-muted small">
+              {% if o.contact_email %}
+                <i class="ti ti-mail me-1"></i>{{ o.contact_email }}
+              {% elif o.contact_phone %}
+                <i class="ti ti-phone me-1"></i>{{ o.contact_phone }}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="card-body text-center py-4 text-muted small">
+        <i class="ti ti-inbox me-1"></i>Sin donaciones asignadas
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+
+  <!-- Unassigned -->
+  {% if unassigned %}
+  <div class="card mb-4" data-aos="fade-up">
+    <div class="card-header d-flex align-items-center gap-3">
+      <h3 class="card-title mb-0">
+        <i class="ti ti-clock me-2 text-warning"></i>Sin albergue asignado
+      </h3>
+      <span class="ms-auto badge bg-warning-lt">{{ unassigned|length }}</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-vcenter card-table">
+        <thead>
+          <tr>
+            <th>Tipo</th>
+            <th>Título</th>
+            <th>Voluntario/a</th>
+            <th>Estado</th>
+            <th>Fecha preferida</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in unassigned %}
+          {% set badge_class, badge_label = o.status_badge() %}
+          <tr>
+            <td>
+              <span class="badge bg-secondary-lt">
+                {% if o.offer_type == 'activity' %}🎨 Actividad
+                {% elif o.offer_type == 'food' %}🍱 Alimentos
+                {% else %}📦 Artículos{% endif %}
+              </span>
+            </td>
+            <td class="fw-semibold">{{ o.title }}</td>
+            <td>
+              <div class="d-flex align-items-center gap-2">
+                <span class="avatar avatar-xs"
+                      style="background:linear-gradient(135deg,#1a56db,#38bdf8);color:#fff;font-weight:700">
+                  {{ o.volunteer.name[0].upper() }}
+                </span>
+                <span class="small">{{ o.volunteer.name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="badge {{ badge_class }}">
+                {% if o.status == 'accepted' %}<i class="ti ti-circle-check me-1 text-success"></i>
+                {% elif o.status == 'pending' %}<i class="ti ti-clock me-1 text-warning"></i>
+                {% else %}<i class="ti ti-x me-1 text-danger"></i>{% endif %}
+                {{ badge_label }}
+              </span>
+            </td>
+            <td class="text-muted small">
+              {{ o.preferred_date.strftime('%d/%m/%Y') if o.preferred_date else '—' }}
+            </td>
+            <td class="text-muted small">
+              {% if o.contact_email %}
+                <i class="ti ti-mail me-1"></i>{{ o.contact_email }}
+              {% elif o.contact_phone %}
+                <i class="ti ti-phone me-1"></i>{{ o.contact_phone }}
+              {% else %}—{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
