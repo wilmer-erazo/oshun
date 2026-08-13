@@ -181,6 +181,21 @@ def auth_logout():
     return redirect(url_for("index"))
 
 
+@app.route("/auth/profile", methods=["GET", "POST"])
+@login_required
+def auth_profile():
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        if not name:
+            flash("El nombre no puede estar vacío.", "warning")
+            return redirect(url_for("auth_profile"))
+        current_user.name = name
+        db.session.commit()
+        flash("Perfil actualizado.", "success")
+        return redirect(url_for("auth_profile"))
+    return render_template("auth/profile.html")
+
+
 def _role_home():
     if current_user.is_admin():
         return url_for("admin_dashboard")
