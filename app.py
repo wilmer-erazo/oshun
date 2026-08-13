@@ -85,6 +85,7 @@ def auth_login():
             return redirect(url_for("auth_login"))
 
         user = User.query.filter_by(email=email).first()
+        is_new_user = user is None
         if not user:
             user = User(name=name, email=email, role="volunteer")
             db.session.add(user)
@@ -227,6 +228,22 @@ def volunteer_offer():
         )
         db.session.add(offer)
         db.session.commit()
+
+        base_url = app.config.get("BASE_URL", "http://localhost:5001")
+        type_labels = {"activity": "Actividad 🎨", "food": "Alimentos 🍱", "goods": "Artículos 📦"}
+        wa_msg = (
+            f"🌊 *Nueva ayuda registrada en Oshún*\n\n"
+            f"👤 *Voluntario:* {current_user.name}\n"
+            f"📋 *Tipo:* {type_labels.get(offer_type, offer_type)}\n"
+            f"📝 *Descripción:* {title}\n"
+        )
+        if contact_email:
+            wa_msg += f"📧 *Email:* {contact_email}\n"
+        if contact_phone:
+            wa_msg += f"📱 *Celular:* {contact_phone}\n"
+        wa_msg += f"\n🔗 Ver dashboard: {base_url}/admin/dashboard"
+        _send_whatsapp(wa_msg)
+
         flash("¡Tu oferta fue enviada! El equipo la revisará pronto.", "success")
         return redirect(url_for("volunteer_dashboard"))
 
@@ -455,6 +472,39 @@ def admin_donations():
         shelter_data.append({"shelter": s, "offers": offers})
     unassigned = Offer.query.filter(Offer.shelter_id.is_(None)).order_by(Offer.created_at.desc()).all()
     return render_template("admin/donations.html", shelter_data=shelter_data, unassigned=unassigned)
+
+
+# WhatsApp setup (Meta Cloud API):
+# 1. Create a Meta Business app at developers.facebook.com
+# 2. Add "WhatsApp" product and get a test phone number
+# 3. Generate a permanent token via a System User in Business Settings
+# 4. Copy WHATSAPP_PHONE_ID from WhatsApp > Getting Started
+# 5. Set WHATSAPP_NOTIFY_TO to comma-separated E.164 numbers (+573001234567,...)
+# 6. Add recipient numbers in the Meta sandbox before going live
+def _send_whatsapp(message: str):
+    """Send WhatsApp message to all configured notify numbers via Meta Cloud API."""
+    import requests as req
+    token = app.config.get("WHATSAPP_TOKEN")
+    phone_id = app.config.get("WHATSAPP_PHONE_ID")
+    notify_to = app.config.get("WHATSAPP_NOTIFY_TO", "")
+    if not token or not phone_id or not notify_to:
+        return
+    url = f"https://graph.facebook.com/v19.0/{phone_id}/messages"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    for number in notify_to.split(","):
+        number = number.strip()
+        if not number:
+            continue
+        payload = {
+            "messaging_product": "whatsapp",
+            "to": number,
+            "type": "text",
+            "text": {"body": message},
+        }
+        try:
+            req.post(url, json=payload, headers=headers, timeout=5)
+        except Exception as e:
+            print(f"[WhatsApp] Error sending to {number}: {e}")
 
 
 def _notify_offer_accepted(offer):

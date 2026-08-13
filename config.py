@@ -20,3 +20,7 @@ class Config:
 
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@alberguescali.com")
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5001")
+
+    WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN")
+    WHATSAPP_PHONE_ID = os.environ.get("WHATSAPP_PHONE_ID")
+    WHATSAPP_NOTIFY_TO = os.environ.get("WHATSAPP_NOTIFY_TO", "")
